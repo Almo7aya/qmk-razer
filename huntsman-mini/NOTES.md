@@ -64,6 +64,9 @@ Source: `qmk/keyboards/razer/huntsman_mini/` (generated parts from `qmk/gen_keyb
   system memory until the next reset; harmless because ChibiOS sets VTOR to 0x08000000. The initial
   `dfuERROR / firmware is corrupt` status is normal for the ROM bootloader and is cleared by dfu-util.
 - Recovery if a future build can't reach QK_BOOT/Bootmagic: SWD via J1 (`swd/flash_qmk.tcl`).
+- **Hardware test passed 2026-10-10** (reassembled board): all 61 keys in VIA's key tester (Menu checked in
+  Notepad: the browser swallows it), Fn layer, RGB colors, cold replug, Fn+`\` → factory DFU → reflash with QMK
+  Toolbox.
 - Backups: `dumps/pre_qmk_*` = stock (with boot stub) right before the first QMK flash; `dumps/qmk_try1_*` = the
   crashing first QMK build.
 

@@ -4,7 +4,7 @@
 
 | Keyboard | MCU | Status |
 |---|---|---|
-| Razer Huntsman Mini (RZ03-0339) | STM32L151RCT6 | **Working**: QMK + VIA, optical switch scanning, per-key RGB (IS31FL3733), USB DFU updates. Full 61-key test pending |
+| Razer Huntsman Mini (RZ03-0339) | STM32L151RCT6 | **Working**, tested on hardware: all 61 keys (optical), Fn layer, per-key RGB (IS31FL3733), VIA, USB DFU updates via QMK Toolbox |
 | Razer Huntsman V3 Pro Mini (RZ03-0499) | ? | Not started |
 
 > [!WARNING]
