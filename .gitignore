@@ -1,0 +1,40 @@
+# --- Razer proprietary material: never commit ---------------------------------------------------
+# Official updaters, their extracted contents and the firmware inside them
+**/stock/
+# Flash/EEPROM dumps (Razer firmware/bootloader, device serial numbers)
+**/dumps/
+**/recovery/
+# Decompiled/disassembled Razer code and Ghidra projects (they embed the binaries)
+**/re/updater/CustomerFWU2Point5/
+**/re/updater/*_decompiled.c
+**/re/updater/ghidra/
+**/re/firmware/ghidra_proj/
+**/re/firmware/decomp_*
+**/re/firmware/listing_*
+**/re/firmware/hexdump_*
+**/re/firmware/tables_*
+**/re/firmware/qmk_snippets_*
+*.gpr
+*.rep/
+# Vendor register description files (download from the vendor / cmsis-svd)
+*.svd
+
+# --- Build outputs and binaries -------------------------------------------------------------------
+**/qmk/build/
+*.bin
+*.hex
+*.elf
+*.map
+*.uf2
+
+# Third-party reference copies (fetched from QMK/ChibiOS while porting)
+**/qmk/ref/
+
+# --- Local environment / personal ----------------------------------------------------------------
+.venv/
+.tools/
+__pycache__/
+*.pyc
+tools/build-server.local.json
+**/logs/
+VIA-app-errors.csv
