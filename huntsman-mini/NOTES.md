@@ -64,6 +64,16 @@ Source: `qmk/keyboards/razer/huntsman_mini/` (generated parts from `qmk/gen_keyb
   system memory until the next reset; harmless because ChibiOS sets VTOR to 0x08000000. The initial
   `dfuERROR / firmware is corrupt` status is normal for the ROM bootloader and is cleared by dfu-util.
 - Recovery if a future build can't reach QK_BOOT/Bootmagic: SWD via J1 (`swd/flash_qmk.tcl`).
+- **Boot shim + QMK ↔ stock switching (2026-10-13)**: `shim/` (580 B) sits at 0x08000000, QMK and the stock app at
+  0x08004000 (ld `STM32L151xC_shim.ld`, shim embedded via `shim_blob.h`, so every QMK .bin is a full image). The shim
+  enters factory DFU on the Razer magic (0xAAAAAAAA @ 0x20007FFC), Esc held at plug-in (row PB1 / col PC6), an invalid
+  app vector table, or any fault; else sets MEMRMP = 0, VTOR = 0x08004000 and starts the app.
+  Bench-tested from 0x08010000 first (the ROM's DFU "leave" jumps to the download address): empty slot → DFU,
+  valid app → app. Then installed and tested on hardware: QMK → DFU via VIA cmd 0x0B "BOOT" (3.6 s); QMK → stock
+  (EEPROM restored via DFU alt 2 "@DATA Memory", stock reports v1.12 + serial, Synapse 4 sees it); stock → DFU via
+  Razer's 0x00/0x04 command (3.3 s); stock normal replug → stock; Esc at plug-in with stock → DFU; stock → QMK.
+  ROM DFU alt settings: 0 = internal flash (256 B pages), 1 = option bytes (don't touch), 2 = data EEPROM (8 KB).
+  One-command switching: `tools/switch_firmware.ps1 -To stock|qmk`.
 - **Hardware test passed 2026-10-10** (reassembled board): all 61 keys in VIA's key tester (Menu checked in
   Notepad: the browser swallows it), Fn layer, RGB colors, cold replug, Fn+`\` → factory DFU → reflash with QMK
   Toolbox.

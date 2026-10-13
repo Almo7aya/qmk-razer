@@ -97,14 +97,15 @@ def main():
         # VIA rejects QMK's placeholder VID 0xFEED; 0x1532 (Razer) would pull in Razer's filter drivers/Synapse.
         # 0x5248 ("RH") is an arbitrary ID for this personal build.
         "usb": {"vid": "0x5248", "pid": "0x0257", "device_version": "1.0.0", "polling_interval": 1},
+        # Esc-at-plug-in is handled by the boot shim (works with QMK and stock). VIA force-enables QMK Bootmagic
+        # anyway; keep it on Esc too, so it's only a fallback (it also clears the EEPROM).
+        "bootmagic": {"matrix": list(MATRIX["ESC"])},
         "features": {
-            "bootmagic": True,
             "extrakey": True,
             "mousekey": True,
             "nkro": True,
             "rgb_matrix": True,
         },
-        "bootmagic": {"matrix": list(MATRIX["ESC"])},
         "matrix_size": {"rows": 8, "cols": 8},
         "matrix_pins": {"custom_lite": True},
         "debounce": 3,

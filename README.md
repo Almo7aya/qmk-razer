@@ -4,12 +4,13 @@
 
 | Keyboard | MCU | Status |
 |---|---|---|
-| Razer Huntsman Mini (RZ03-0339) | STM32L151RCT6 | **Working**, tested on hardware: all 61 keys (optical), Fn layer, per-key RGB (IS31FL3733), VIA, USB DFU updates via QMK Toolbox |
+| Razer Huntsman Mini (RZ03-0339) | STM32L151RCT6 | **Working**, tested on hardware: all 61 keys (optical), Fn layer, per-key RGB (IS31FL3733), VIA, USB updates, switching QMK ↔ stock without opening the case |
 | Razer Huntsman V3 Pro Mini (RZ03-0499) | ? | Not started |
 
 > [!WARNING]
 > This replaces Razer's firmware, needs the case opened for the first install, and voids your warranty.
-> Razer's own bootloader cannot be kept (see below), so going back to stock means restoring your own SWD backup.
+> Razer's own bootloader cannot be kept (see below), so going back to stock needs the SWD backup you take before
+> installing (after that, switching QMK ↔ stock works over USB).
 > You do this at your own risk. Not affiliated with or endorsed by Razer.
 
 > [!CAUTION]
@@ -63,17 +64,27 @@ You need an SWD probe. A Raspberry Pi Pico (or Pico 2) running Raspberry Pi's
 
 If the first boot after a flash doesn't show up on USB, replug once.
 
+### Boot shim and flash layout
+
+Every QMK build contains a small **boot shim** ([`huntsman-mini/shim`](huntsman-mini/shim), 580 bytes) at
+`0x08000000`, where Razer's bootloader used to be. QMK itself starts at `0x08004000`, the same place as Razer's stock
+app, so the shim can start either firmware. At power-up the shim starts the STM32 factory USB DFU bootloader
+(`0483:DF11`, "STM32 BOOTLOADER") when Esc is held, when Razer's firmware asks for its bootloader, or when the
+firmware slot is empty; otherwise it starts the installed firmware. The QMK `.bin` is a complete image: always flash
+it at `0x08000000`.
+
 ### Updating (USB, no case opening)
 
-QMK starts the STM32 factory USB DFU bootloader (`0483:DF11`, "STM32 BOOTLOADER"):
+Get into the bootloader in any of these ways:
 
-* press **Fn + `\`** (`QK_BOOT`), or
-* hold **Esc** while plugging the keyboard in (Bootmagic, also clears the EEPROM).
+* hold **Esc** while plugging the keyboard in (works with QMK and stock firmware),
+* press **Fn + Backslash** (`QK_BOOT`) in QMK,
+* from the PC: `python tools/enter_bootloader.py` (QMK: VIA command; stock: Razer's own "enter bootloader" command).
 
 Then flash the `.bin` with [QMK Toolbox](https://github.com/qmk/qmk_toolbox) (it installs the DFU driver), or
 `dfu-util -a 0 -d 0483:df11 -s 0x08000000:leave -D razer_huntsman_mini_via.bin`.
 
-If a build ever can't reach `QK_BOOT`/Bootmagic, recover over SWD as in the first install.
+If a build ever can't reach the bootloader, recover over SWD as in the first install.
 
 ### Building
 
@@ -104,12 +115,16 @@ VIA doesn't know this keyboard, so load the definition once: VIA → Settings �
 **Load Draft Definition** →
 [`huntsman-mini/qmk/via/razer_huntsman_mini.json`](huntsman-mini/qmk/via/razer_huntsman_mini.json).
 
-### Going back to stock
+### Switching between QMK and stock (no case opening)
 
-Restore your own backup over SWD (flash `swd_flash_08000000_256K.bin` to `0x08000000` and the EEPROM dump to
-`0x08080000`). If the Razer bootloader was already damaged, write the stock app's vector table to `0x08000000`
-so the app boots directly (see the recovery section in [`NOTES.md`](huntsman-mini/NOTES.md)). Razer's updater won't
-work without its bootloader.
+Needs your own SWD backup from the first install (`huntsman-mini/dumps/`, never published):
+
+1. Build the stock image once: `python tools/make_stock_image.py` (your backed-up Razer app with the shim in front).
+2. Switch: `pwsh tools/switch_firmware.ps1 -To stock` / `-To qmk`. It enters the bootloader from the PC, restores your
+   Razer settings and serial to the data EEPROM when going to stock, flashes the right image and waits for it.
+
+Tested both ways: stock comes back as v1.12 with its settings and Razer Synapse sees it. Razer's own firmware updater
+won't work any more (it needs Razer's bootloader), so don't accept firmware updates in Synapse.
 
 ## Repository layout
 
@@ -119,9 +134,11 @@ huntsman-mini/
   docs/                    stock firmware + Razer bootloader protocol write-ups
   photos/                  I/O board photos, J1 pinout
   qmk/                     QMK keyboard, generator, VIA definition
+  shim/                    boot shim (QMK <-> stock switching, Esc-at-plug-in bootloader)
   re/                      analysis scripts (Ghidra/capstone); outputs are not committed
 swd/                       OpenOCD config and scripts (probe, backup, flash, tests)
-tools/                     Razer updater extraction, Razer HID tool, remote build, USB watcher
+tools/                     enter_bootloader / switch_firmware / make_stock_image, Razer updater extraction,
+                           Razer HID tool, remote build, USB watcher
 ```
 
 Not included on purpose: Razer's updaters, firmware, flash dumps and decompiled code. The scripts in

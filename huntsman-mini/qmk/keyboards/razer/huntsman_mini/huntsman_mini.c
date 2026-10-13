@@ -6,6 +6,7 @@
 #include "eeconfig.h"
 #ifdef VIA_ENABLE
 #    include "via.h"
+#    include "raw_hid.h"
 #endif
 
 // Data-EEPROM writes stall the CPU (~3 ms per word). A full (re)initialisation rewrites up to ~500 words,
@@ -21,6 +22,13 @@ void keyboard_pre_init_kb(void) {
 #endif
     keyboard_pre_init_user();
 }
+
+// Boot shim at 0x08000000 (see huntsman-mini/shim and ld/STM32L151xC_shim.ld): starts QMK at 0x08004000, or the
+// factory USB DFU bootloader when Esc is held at plug-in, when Razer's stock firmware asks for its bootloader, or
+// when the firmware slot is empty. Embedding it makes every QMK .bin a complete image to flash at 0x08000000.
+__attribute__((section(".shim"), used)) static const uint8_t boot_shim[] = {
+#include "shim_blob.h"
+};
 
 #ifdef RGB_MATRIX_ENABLE
 const is31fl3733_led_t PROGMEM g_is31fl3733_leds[IS31FL3733_LED_COUNT] = {
@@ -43,6 +51,25 @@ void i2c_init(void) {
         palSetLineMode(I2C1_SDA_PIN, PAL_MODE_ALTERNATE(I2C1_SDA_PAL_MODE) | PAL_STM32_OTYPE_OPENDRAIN | PAL_STM32_PUPDR_PULLUP | PAL_STM32_OSPEED_HIGHEST);
     }
 }
+
+#ifdef VIA_ENABLE
+// Enter the bootloader from the PC (tools/enter_bootloader.py): VIA's id_bootloader_jump (0x0B), which QMK
+// no longer handles itself. Requires the signature "BOOT" in data[1..4] so stray traffic can't trigger it.
+bool via_command_kb(uint8_t *data, uint8_t length) {
+    if (data[0] != id_bootloader_jump) {
+        return false;
+    }
+    if (length < 5 || data[1] != 'B' || data[2] != 'O' || data[3] != 'O' || data[4] != 'T') {
+        data[0] = id_unhandled;
+        raw_hid_send(data, length);
+        return true;
+    }
+    raw_hid_send(data, length); // acknowledge before USB goes away
+    wait_ms(100);
+    bootloader_jump();
+    return true;
+}
+#endif
 
 // Bootloader: the Razer bootloader is gone, so QK_BOOT / Bootmagic start the STM32 factory (system memory)
 // bootloader, which provides USB DFU (0483:DF11) on this chip with its 12 MHz crystal (tested over SWD).

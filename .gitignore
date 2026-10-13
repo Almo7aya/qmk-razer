@@ -21,6 +21,7 @@
 
 # --- Build outputs and binaries -------------------------------------------------------------------
 **/qmk/build/
+**/shim/build/
 *.bin
 *.hex
 *.elf

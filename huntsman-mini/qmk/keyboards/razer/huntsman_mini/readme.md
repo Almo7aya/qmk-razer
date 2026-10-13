@@ -12,12 +12,16 @@ Make example for this keyboard (after setting up your build environment):
 
 ## Bootloader
 
-Enter the STM32 factory USB DFU bootloader (`0483:DF11`) in one of these ways:
+The build embeds a small boot shim at `0x08000000` (from `shim_blob.h`, source in the repository's
+`huntsman-mini/shim`); QMK runs from `0x08004000`. The shim starts the STM32 factory USB DFU bootloader
+(`0483:DF11`) instead of the firmware in these cases:
 
-* **Keycode in layout**: Press the key mapped to `QK_BOOT` (Fn + `\` in the default keymaps)
-* **Bootmagic reset**: Hold down Esc while plugging in the keyboard (this also clears the EEPROM)
+* **Physical reset**: Hold down Esc while plugging in the keyboard (also works with Razer's stock firmware)
+* **Keycode in layout**: Press the key mapped to `QK_BOOT` (Fn + Backslash in the default keymaps)
+* **From the PC**: VIA command `0x0B` with the signature `BOOT` (`tools/enter_bootloader.py` in the repository)
 
-Then flash the `.bin` at `0x08000000` with QMK Toolbox or `dfu-util -a 0 -d 0483:df11 -s 0x08000000:leave -D <file>.bin`.
+The `.bin` is a complete image (shim + QMK): flash it at `0x08000000` with QMK Toolbox or
+`dfu-util -a 0 -d 0483:df11 -s 0x08000000:leave -D <file>.bin`.
 
 The stock Razer bootloader cannot be used. For a first install (or recovery) the firmware is written over SWD
 through the unpopulated `J1` footprint (ARM 10-pin, 1.27 mm: pin 2 SWDIO, pin 4 SWCLK, pin 3 GND, pin 10 nRESET),
