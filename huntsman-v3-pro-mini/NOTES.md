@@ -1,5 +1,8 @@
 # Razer Huntsman V3 Pro Mini (RZ03-0499, USB 1532:02B0) — QMK feasibility notes
 
+**Status: not supported, no port planned.** The main MCU is an NXP LPC55xx, which QMK/ChibiOS don't support, and the
+analog switches are read by a separate chip running encrypted firmware. The keyboard stays on Razer's firmware.
+
 Phase 1 (2026-10-13): static analysis of Razer's official updater only. Nothing was sent to the keyboard.
 
 ## Updater

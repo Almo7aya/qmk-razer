@@ -5,7 +5,7 @@
 | Keyboard | MCU | Status |
 |---|---|---|
 | Razer Huntsman Mini (RZ03-0339) | STM32L151RCT6 | **Working**, tested on hardware: all 61 keys (optical), Fn layer, per-key RGB (IS31FL3733), VIA, USB updates, switching QMK ↔ stock without opening the case |
-| Razer Huntsman V3 Pro Mini (RZ03-0499) | ? | Not started |
+| Razer Huntsman V3 Pro Mini (RZ03-0499) | NXP LPC55xx (Cortex-M33) | **Not supported**: QMK/ChibiOS have no LPC55 support; see [findings](#razer-huntsman-v3-pro-mini) |
 
 > [!WARNING]
 > This replaces Razer's firmware, needs the case opened for the first install, and voids your warranty.
@@ -126,6 +126,28 @@ Needs your own SWD backup from the first install (`huntsman-mini/dumps/`, never 
 Tested both ways: stock comes back as v1.12 with its settings and Razer Synapse sees it. Razer's own firmware updater
 won't work any more (it needs Razer's bootloader), so don't accept firmware updates in Synapse.
 
+## Razer Huntsman V3 Pro Mini
+
+Not supported, and no port is planned for now. Findings from Razer's official updater v2.01.00_r1 (static analysis
+only; the keyboard was never touched). Details in [`huntsman-v3-pro-mini/NOTES.md`](huntsman-v3-pro-mini/NOTES.md).
+
+| | |
+|---|---|
+| USB | `1532:02B0`, bcdDevice `0x0101`; Razer bootloader `1532:110E`, version 2.0 (same family as the Huntsman Mini's) |
+| Main MCU | **NXP LPC55xx** (Arm Cortex-M33, likely LPC5528-class), NXP MCUXpresso SDK 2.8.2 |
+| USB hardware | LPC55 USB1 high-speed device with on-chip PHY (needed for 8 kHz polling) |
+| Firmware | Plaintext Intel HEX; the app runs from SRAM at `0x20000000` (128 KB image) |
+| Analog switches | Read by a **separate chip with its own encrypted firmware** (37 KB, updated through the keyboard by a vendor DLL) |
+
+Why there is no QMK port:
+
+* **QMK and ChibiOS have no LPC55 support** (the closest NXP parts are LPC11Uxx, Kinetis and i.MX RT). A port would
+  first need a new ChibiOS HAL for the LPC55: clocks/power, pins, high-speed USB, SPI/I2C, DMA, timers.
+* The analog sensing chip runs encrypted firmware, so adjustable actuation / Rapid Trigger would depend on reverse
+  engineering how the main MCU talks to it.
+* Unknown without opening the case: debug (SWD) access and whether the LPC55's debug/ISP protection is locked.
+* The stock firmware already offers Rapid Trigger, Snap Tap and adjustable actuation via Razer Synapse.
+
 ## Repository layout
 
 ```
@@ -135,6 +157,8 @@ huntsman-mini/
   photos/                  I/O board photos, J1 pinout
   qmk/                     QMK keyboard, generator, VIA definition
   shim/                    boot shim (QMK <-> stock switching, Esc-at-plug-in bootloader)
+huntsman-v3-pro-mini/
+  NOTES.md                 Huntsman V3 Pro Mini findings (NXP LPC55xx, not supported)
   re/                      analysis scripts (Ghidra/capstone); outputs are not committed
 swd/                       OpenOCD config and scripts (probe, backup, flash, tests)
 tools/                     enter_bootloader / switch_firmware / make_stock_image, Razer updater extraction,
