@@ -32,6 +32,9 @@
 **/qmk/ref/
 
 # --- Local environment / personal ----------------------------------------------------------------
+# Private companion repo (tools/private_repo.ps1) and its README
+.private.git/
+PRIVATE.md
 .venv/
 .tools/
 __pycache__/
